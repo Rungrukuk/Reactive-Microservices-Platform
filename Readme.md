@@ -1,4 +1,4 @@
-# Microservices Platform
+# Reactive Microservices Platform
 
 A production-grade microservices architecture demonstrating enterprise-level security protocols (mTLS, TLS, RBAC, CBAC) with optimized inter-service communication using RSocket and Protocol Buffers. This project proves that comprehensive security measures can be implemented without sacrificing performance or introducing unacceptable latency.
 
