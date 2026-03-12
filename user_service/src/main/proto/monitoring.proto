@@ -1,0 +1,15 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "platform.user_service";
+option java_outer_classname = "MonitoringProto";
+
+message ProtoMonitoringEvent {
+  string eventType = 1;
+  string serviceName = 2;
+  string userId = 3;
+  string userAgent = 4;
+  string clientCity = 5;
+  string details = 6;
+  string timestamp = 7;
+  map<string, string> metadata = 8;
+}

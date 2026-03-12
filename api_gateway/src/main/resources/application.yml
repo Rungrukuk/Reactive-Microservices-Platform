@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: api_gateway
+
+  ssl:
+    bundle:
+      jks:
+        serverBundle:
+          key:
+            alias: ${API_KEYSTORE_ALIAS}
+          keystore:
+            location: ${API_KEYSTORE_PATH}
+            password: ${API_KEYSTORE_PASSWORD}
+            type: PKCS12
+        clientBundle:
+          keystore:
+            location: ${API_CLIENT_KEYSTORE_PATH}
+            password: ${API_CLIENT_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    bundle: serverBundle
+
+client:
+  ssl:
+    bundle: clientBundle
+    enabled: true
+
+services:
+  endpoints:
+    AUTH_SERVICE:
+      host: ${AUTH_SERVICE_HOST:localhost}
+      port: ${AUTH_SERVICE_PORT:7000}
+    USER_SERVICE:
+      host: ${USER_SERVICE_HOST:localhost}
+      port: ${USER_SERVICE_PORT:7001}
+
+logging:
+  level:
+    platform.api_gateway: INFO

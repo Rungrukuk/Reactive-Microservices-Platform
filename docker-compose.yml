@@ -1,0 +1,161 @@
+services:
+
+  postgres:
+    image: postgres:18-alpine
+    command: postgres -c max_connections=9999
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: auth
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/01-init-auth.sql:/docker-entrypoint-initdb.d/01-init-auth.sql
+      - ./docker/postgres/02-init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
+      - ./docker/postgres/03-init-location.sql:/docker-entrypoint-initdb.d/03-init-location.sql
+      - ./docker/postgres/04-init-log.sql:/docker-entrypoint-initdb.d/04-init-log.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.2.4-alpine3.22
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - ./docker/redis/redis.conf:/etc/redis/redis.conf
+      - ./certs/redis/redis.crt:/tls/redis.crt
+      - ./certs/redis/redis.key:/tls/redis.key
+      - ./certs/ca/ca.crt:/tls/ca.crt
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --tls --cacert /tls/ca.crt -u rediss://${REDIS_USERNAME}:${REDIS_PASSWORD}@localhost:6379 ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  monitoring-service:
+    build: ./monitoring_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MONITORING_KEYSTORE_PATH: /certs/monitoring/monitoring.p12
+      MONITORING_KEYSTORE_PASSWORD: ${MONITORING_KEYSTORE_PASSWORD}
+      TRUSTSTORE_PATH: /certs/truststore/truststore.p12
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD}
+      JAVA_TOOL_OPTIONS: "-XX:+UseCompactObjectHeaders"
+    volumes:
+      - ./certs:/certs
+
+  auth-service:
+    build: ./auth_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      monitoring-service:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_USERNAME: ${REDIS_USERNAME}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_KEYSTORE_PATH: /certs/redis/redis.p12
+      REDIS_KEYSTORE_PASSWORD: ${REDIS_KEYSTORE_PASSWORD}
+      TRUSTSTORE_PATH: /certs/truststore/truststore.p12
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD}
+      AUTH_KEYSTORE_PATH: /certs/auth/auth-service.p12
+      AUTH_KEYSTORE_PASSWORD: ${AUTH_KEYSTORE_PASSWORD}
+      MONITORING_SERVICE_HOST: monitoring-service
+      MONITORING_SERVICE_PORT: 7002
+      JWT_ACCESS_PRIVATE_KEY: ${JWT_ACCESS_PRIVATE_KEY}
+      JWT_ACCESS_PUBLIC_KEY: ${JWT_ACCESS_PUBLIC_KEY}
+      JWT_REFRESH_PRIVATE_KEY: ${JWT_REFRESH_PRIVATE_KEY}
+      JWT_REFRESH_PUBLIC_KEY: ${JWT_REFRESH_PUBLIC_KEY}
+      JWT_SERVICE_PRIVATE_KEY: ${JWT_SERVICE_PRIVATE_KEY}
+      JWT_SERVICE_PUBLIC_KEY: ${JWT_SERVICE_PUBLIC_KEY}
+      JAVA_TOOL_OPTIONS: "-Xmx6G -Xms2G -XX:+UseCompactObjectHeaders"
+    volumes:
+      - ./certs:/certs
+
+  user-service:
+    build: ./user_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      monitoring-service:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      USER_KEYSTORE_PATH: /certs/user/user-service.p12
+      USER_KEYSTORE_PASSWORD: ${USER_KEYSTORE_PASSWORD}
+      TRUSTSTORE_PATH: /certs/truststore/truststore.p12
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD}
+      MONITORING_SERVICE_HOST: monitoring-service
+      MONITORING_SERVICE_PORT: 7002
+      JWT_SERVICE_PUBLIC_KEY: ${JWT_SERVICE_PUBLIC_KEY}
+      JAVA_TOOL_OPTIONS: "-XX:+UseCompactObjectHeaders"
+    volumes:
+      - ./certs:/certs
+
+  api-gateway:
+    build: ./api_gateway
+    ports:
+      - "8443:8443"
+    depends_on:
+      - auth-service
+      - user-service
+    environment:
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_PORT: 7000
+      USER_SERVICE_HOST: user-service
+      USER_SERVICE_PORT: 7001
+      API_KEYSTORE_PATH: /certs/api-gateway/server/api-gateway.p12
+      API_KEYSTORE_PASSWORD: ${API_KEYSTORE_PASSWORD}
+      API_KEYSTORE_ALIAS: ${API_KEYSTORE_ALIAS}
+      API_CLIENT_KEYSTORE_PATH: /certs/api-gateway/client/api-gateway-client.p12
+      API_CLIENT_KEYSTORE_PASSWORD: ${API_CLIENT_KEYSTORE_PASSWORD}
+      TRUSTSTORE_PATH: /certs/truststore/truststore.p12
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD}
+      JAVA_TOOL_OPTIONS: "-XX:+UseCompactObjectHeaders"
+    volumes:
+      - ./certs:/certs
+      
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

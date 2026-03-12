@@ -1,0 +1,10 @@
+package platform.monitoring_service.util;
+
+public enum EventType {
+    FAILED_REFRESH_TOKEN_MATCH,
+    FAILED_LOGIN_ATTEMPT,
+    INVALID_SESSION_TOKEN_COMBINATION,
+    INVALID_JWT_FORMAT,
+    SERVICE_TOKEN_MISMATCH,
+    SUSPICIOUS_ACTIVITY
+}

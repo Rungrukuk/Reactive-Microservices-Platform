@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: auth_service
+
+  ssl:
+    bundle:
+      jks:
+        serverBundle:
+          key:
+            alias: auth
+          keystore:
+            location: ${AUTH_KEYSTORE_PATH}
+            password: ${AUTH_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+        clientBundle:
+          keystore:
+            location: ${AUTH_KEYSTORE_PATH}
+            password: ${AUTH_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+        redisBundle:
+          keystore:
+            location: ${REDIS_KEYSTORE_PATH}
+            password: ${REDIS_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+
+  rsocket:
+    server:
+      port: 7000
+      ssl:
+        enabled: true
+        client-auth: need
+        bundle: serverBundle
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      timeout: 60000
+      client-name: platformRedis
+      ssl:
+        enabled: true
+        bundle: redisBundle
+
+  main:
+    web-application-type: none
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:5432/auth
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    pool:
+      enabled: true
+      initial-size: 20
+      max-size: 9999
+      max-idle-time: 30s
+      max-life-time: 30m
+      max-create-connection-time: 5s
+      max-acquire-time: 5s
+      validation-query: SELECT 1
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/auth
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+client:
+  ssl:
+    bundle: clientBundle
+    enabled: true
+
+services:
+  monitoring:
+    host: ${MONITORING_SERVICE_HOST:localhost}
+    port: ${MONITORING_SERVICE_PORT:7002}
+
+jwt:
+  access:
+    private: ${JWT_ACCESS_PRIVATE_KEY}
+    public: ${JWT_ACCESS_PUBLIC_KEY}
+    expiration: 86400000
+  refresh:
+    private: ${JWT_REFRESH_PRIVATE_KEY}
+    public: ${JWT_REFRESH_PUBLIC_KEY}
+    expiration: 604800000
+  service:
+    private: ${JWT_SERVICE_PRIVATE_KEY}
+    public: ${JWT_SERVICE_PUBLIC_KEY}
+    expiration: 300000
+
+logging:
+  level:
+    platform.auth_service: INFO

@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: monitoring_service
+
+  ssl:
+    bundle:
+      jks:
+        serverBundle:
+          key:
+            alias: monitoring
+          keystore:
+            location: ${MONITORING_KEYSTORE_PATH}
+            password: ${MONITORING_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+
+  rsocket:
+    server:
+      port: 7002
+      ssl:
+        enabled: true
+        client-auth: need
+        bundle: serverBundle
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:5432/log
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  main:
+    web-application-type: none
+
+logging:
+  level:
+    platform.monitoring_service: INFO

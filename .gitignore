@@ -1,0 +1,35 @@
+certs/
+.env
+
+# Maven
+target/
+*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Docker
+*.log
+
+HELP.md
+
+# STS 
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/

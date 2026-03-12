@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: user_service
+
+  ssl:
+    bundle:
+      jks:
+        serverBundle:
+          key:
+            alias: user-service
+          keystore:
+            location: ${USER_KEYSTORE_PATH}
+            password: ${USER_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+        clientBundle:
+          keystore:
+            location: ${USER_KEYSTORE_PATH}
+            password: ${USER_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: ${TRUSTSTORE_PATH}
+            password: ${TRUSTSTORE_PASSWORD}
+            type: PKCS12
+
+  rsocket:
+    server:
+      port: 7001
+      ssl:
+        enabled: true
+        client-auth: need
+        bundle: serverBundle
+
+  main:
+    web-application-type: none
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+  r2dbc:
+    pool:
+      enabled: true
+      initial-size: 20
+      max-size: 9999
+      max-idle-time: 30s
+      max-life-time: 30m
+      max-create-connection-time: 5s
+      max-acquire-time: 5s
+      validation-query: SELECT 1
+    user:
+      url: r2dbc:postgresql://${DB_HOST:localhost}:5432/user
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+    location:
+      url: r2dbc:postgresql://${DB_HOST:localhost}:5432/location
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+
+client:
+  ssl:
+    bundle: clientBundle
+    enabled: true
+
+services:
+  monitoring:
+    host: ${MONITORING_SERVICE_HOST:localhost}
+    port: ${MONITORING_SERVICE_PORT:7002}
+
+jwt:
+  service:
+    public: ${JWT_SERVICE_PUBLIC_KEY}
+
+logging:
+  level:
+    platform.user_service: INFO

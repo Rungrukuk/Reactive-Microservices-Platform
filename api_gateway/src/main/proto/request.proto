@@ -1,0 +1,19 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "platform.api_gateway";
+option java_outer_classname = "RequestProto";
+
+message  ProtoRequest{
+  map<string, string> data = 1;
+  map<string, string> metadata = 2;
+}
+
+message ProtoAuthRequest{
+  string accessToken = 1;
+  string sessionId = 2;
+  string refreshToken = 3;
+  repeated string services = 4;
+  repeated string destinations = 5;
+  string userAgent = 6;
+  string clientCity = 7;
+}

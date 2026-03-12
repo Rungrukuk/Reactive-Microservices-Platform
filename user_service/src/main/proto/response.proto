@@ -1,0 +1,11 @@
+syntax = "proto3";
+option java_package = "platform.auth_service";
+option java_outer_classname = "ResponseProto";
+
+message ProtoResponse {
+  map<string, string> data = 1;
+  map<string, string> metadata = 2;
+  string status = 3;
+  int32 statusCode = 4;
+  string message = 5;
+}

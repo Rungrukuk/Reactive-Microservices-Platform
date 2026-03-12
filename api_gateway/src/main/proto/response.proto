@@ -1,0 +1,18 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "platform.api_gateway";
+option java_outer_classname = "ResponseProto";
+
+message ProtoResponse {
+  map<string, string> data = 1;
+  map<string, string> metadata = 2;
+  string status = 3;
+  int32 statusCode = 4;
+  string message = 5;
+}
+
+message ProtoAuthResponse{
+  string status = 1;
+  map<string, string> metadata = 2;
+  int32 statusCode = 3;
+}
